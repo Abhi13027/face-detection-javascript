@@ -1,23 +1,48 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useRef, useEffect } from "react";
+import * as faceapi from "face-api.js";
+
+import "./App.css";
 
 function App() {
+  const video = useRef();
+  const app = useRef();
+
+  useEffect(() => {
+    navigator.mediaDevices
+      .getUserMedia({ video: true })
+      .then((stream) => (video.current.srcObject = stream))
+      .catch(console.log);
+  }, []);
+
+  const onVideoPlayListener = () => {
+    const canvas = faceapi.createCanvasFromMedia(video);
+    app.append(canvas);
+    const displaySize = { width: video.width, height: video.height };
+    faceapi.matchDimensions(canvas, displaySize);
+    setInterval(async () => {
+      const detections = await faceapi
+        .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceExpressions();
+      const resizedDetections = faceapi.resizeResults(detections, displaySize);
+      canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+      faceapi.draw.drawDetections(canvas, resizedDetections);
+      faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
+      faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
+    }, 100);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className='App' ref={app}>
+      <video
+        id='video'
+        width='720'
+        height='560'
+        autoPlay
+        muted
+        onPlay={onVideoPlayListener}
+        ref={video}
+      ></video>
     </div>
   );
 }
