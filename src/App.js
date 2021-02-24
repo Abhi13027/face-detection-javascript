@@ -1,14 +1,16 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import * as faceapi from "face-api.js";
 
 import "./App.css";
 
 function App() {
+  const [loading, setLoading] = useState(false);
   const videoRef = useRef();
   const canvasRef = useRef();
 
   useEffect(() => {
     const loadAllModels = async () => {
+      setLoading(true);
       Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
         faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
@@ -33,6 +35,9 @@ function App() {
 
   const onVideoPlayListener = () => {
     setInterval(async () => {
+      if (loading) {
+        setLoading(false);
+      }
       canvasRef.current.innerHTML = faceapi.createCanvasFromMedia(
         videoRef.current
       );
@@ -57,6 +62,9 @@ function App() {
 
   return (
     <div className="app">
+      <div className="app__header">
+        {loading ? <h1>Loading.....</h1> : <null></null>}
+      </div>
       <div className="app__container">
         <video
           id="video"
